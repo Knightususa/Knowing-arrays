@@ -3,13 +3,13 @@
 #include <stdbool.h>
 
 #ifndef NDEBUG
-    #define yaissert(usl, text)                       \
-    {                                                 \
-        if(!(usl))                                    \
-        {                                             \
-            printf("text\n%s:%s", __FILE__, __LINE__);\
-            abort();                                  \
-        }                                             \
+    #define yaissert(usl, text)                                  \
+    {                                                            \
+        if(!(usl))                                               \
+        {                                                        \
+            printf("\n" text "\n%s:%i", __FILE_NAME__, __LINE__);\
+            abort();                                             \
+        }                                                        \
     }
 #else
     #define yaissert
@@ -39,6 +39,8 @@ int main()
 
 bool PrintHowItLooksLike (Triangle_array triangleArr, int Y, int X)
 {
+    yaissert(X >= 0, "X < 0");
+    yaissert(Y >= 0, "Y < 0");
     printf("\n\nThis is how this array look like\n\n");
     for(int y = 0; y < Y * 2 + 1; y++)
     {
@@ -67,14 +69,17 @@ char TAGetValue (Triangle_array triangleArr, int y, int x)
     }
 
     int d = (((y + 1) * y) / 2) + x;
-    yaissert(0 <= d && d <= triangleArr.len, "Not in array\n");
+    yaissert(x >= 0, "x < 0");
+    yaissert(y >= 0, "y < 0");
+    yaissert(0 <= d && d <= triangleArr.len, "Not in array");
     return (char) ((int) '0' + triangleArr.ref[d]);
 }
 
 Triangle_array CreateTriangleArr (int Y, int X)
 {   
     Triangle_array triangleArr = {.ref = NULL, .len = 0};
-
+    yaissert(X >= 0, "X < 0");
+    yaissert(Y >= 0, "Y < 0");
     if(X <= 0 || Y <= 0)
     {
         printf("x and y must be positive");
@@ -97,6 +102,3 @@ void TAEditValue (Triangle_array triangleArr, int y, int x, int value)
     x--;
     triangleArr.ref[((y + 1) * y + y * 2)/2] = value;
 }
-
-//FIX 
-//Add yaissert for y < 0 and x < 0 
