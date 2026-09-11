@@ -11,7 +11,7 @@
     {                                                            \
         if(!(usl))                                               \
         {                                                        \
-            printf("\n" text "\n%s:%i", __FILE_NAME__, __LINE__);\
+            printf("\n" RED text "\n%s:%i" RESET, __FILE_NAME__, __LINE__);\
             abort();                                             \
         }                                                        \
     }
@@ -24,51 +24,45 @@ typedef struct {
     int* ref;
     int X, Y;
     int len;
-    int (*xytoD)(int, int);
+    int (*xytoD)(int X, int Y);
 } Triangle_array;
 
 bool             PrintHowItLooksLike (Triangle_array triangleArr);
 bool             IsSpaceNext();
 bool             InputArr(int* pX, int* pY);
-bool             InputJob(Triangle_array*  triangleArr, bool isEsc);
-bool             InputEdit(Triangle_array* triangleArr, bool isEsc);
+bool             WhatToDoWithArray(Triangle_array*  ptriangleArr, bool isEsc);
+bool             InputEdit(Triangle_array* ptriangleArr, bool isEsc);
 bool             IsJob();
-
 Triangle_array   CreateTriangleArr (int y, int x);
-
 char             TAGetValue  (Triangle_array  triangleArr, int y, int x);//TriangleArrayGetValue
-void             TAEditValue (Triangle_array* triangleArr, int y, int x, int value);//TriangleArrayEditValue
-
 int              XYtoD (int x, int y);
 
 //--------------------------------
 int main()
 {
+    Triangle_array triangleArr = {};
     while(1)
     {
         int Y = 0, X = 0;
         bool isEsc = InputArr(&X, &Y);
-        Triangle_array triangleArr = {.ref = NULL, .X = X, .Y = Y, .len = 0};
+        if(isEsc)
+            break;
+
         triangleArr = CreateTriangleArr(Y, X);
-        bool isJob = 1;
+        bool  isJob = 1;
         while(isJob)
         {
-            isEsc = InputJob(&triangleArr, isEsc);
+            isEsc = WhatToDoWithArray(&triangleArr, isEsc);
+            if(isEsc)
+                break;
             isJob = IsJob();
         }
         if(isEsc)
             break;
     }
-    
-
-    // TAEditValue(triangleArr1 1, 1, 1);
-    // TAEditValue(triangleArr, 5, 5, 1);
-    // PrintHowItLooksLike(triangleArr1,  5, 10);
+    free(triangleArr.ref);
 }
 //----------------------------------
-
-
-
 
 
 
@@ -79,7 +73,11 @@ bool PrintHowItLooksLike (Triangle_array triangleArr)
     {
         for(int x = 0; x < triangleArr.X; x++)
         {
-            char a = (x * 2 - y < 0) ? TAGetValue(triangleArr, y - (1 + y / 2), x) : 'x'; 
+            char a = 0;
+            if(x * 2 - y < 0)
+                a = TAGetValue(triangleArr, y - (1 + y / 2), x);
+            else
+                a = 'x';
             if(y % 2 == 0)
                 printf("+-");
             else
@@ -97,36 +95,28 @@ bool PrintHowItLooksLike (Triangle_array triangleArr)
 char TAGetValue (Triangle_array triangleArr, int y, int x)
 {
     if(triangleArr.ref == NULL || x > y)
-    {
         return ' ';
-    }
 
     int d = (((y + 1) * y) / 2) + x;
     yaissert(x >= 0, "x < 0");
     yaissert(y >= 0, "y < 0");
-    yaissert(0 <= d && d <= triangleArr.len, "Not in array\n");
+    yaissert(0 <= d && d < triangleArr.len, "Not in array\n");
     return (char) ((int) '0' + triangleArr.ref[d]);
 }
 
 Triangle_array CreateTriangleArr (int Y, int X)
 {   
-    Triangle_array triangleArr = {.ref = NULL, .len = 0};
+    Triangle_array triangleArr;
     yaissert(X >= 0, "X < 0");
     yaissert(Y >= 0, "Y < 0");
+
     triangleArr.X = X;
     triangleArr.Y = Y;
-    triangleArr.len = (((Y + 1) * Y + Y * 2)/2);
+    triangleArr.len = (int) (((Y + 1) * Y + Y * 2)/2);
+    triangleArr.xytoD = XYtoD;
     triangleArr.ref = (int*) calloc(triangleArr.len, sizeof(int));
-    triangleArr = {.xytoD = XYtoD};
 
     return triangleArr;
-}
-
-void TAEditValue (Triangle_array* triangleArr, int y, int x, int value)
-{
-    y--;
-    x--;
-    triangleArr -> ref[((y + 1) * y + y * 2)/2] = value;
 }
 
 bool InputArr(int* pX, int* pY)
@@ -141,12 +131,12 @@ bool InputArr(int* pX, int* pY)
         bool isSpaceNext = IsSpaceNext();
         if(Y == -1)
         {
-            break;
+            return true;
         }
 
-        if(X <= 0 || Y <= 0)
+        if(X < 0 || Y < 0)
         {
-            printf(RED "x and y must be positive\n\n" RESET);
+            printf(RED "x and y must be positive or 0\n\n" RESET);
             isNotCorrect = 1;
         }
 
@@ -163,7 +153,6 @@ bool InputArr(int* pX, int* pY)
 
         printf("Enter two number\n");
     }
-    if(Y == 'E') return true;
     *pX = X;
     *pY = Y;
     return false;
@@ -173,22 +162,24 @@ bool IsSpaceNext()
 {
     char tempc = ' ';
     while(tempc == ' ')
-        tempc = getchar();
+        tempc = (char) getchar();
     if(tempc == '\n')
         return true;
     return false;
 }
 
-bool InputJob(Triangle_array* triangleArr, bool isEsc)
+bool WhatToDoWithArray(Triangle_array* ptriangleArr, bool isEsc)
 {
     int choose = 0;
-    if(isEsc == 1)
-        return 1;
+    if(isEsc)
+        return true;
     while(1)
     {
+        if(isEsc)
+            return 1;
         printf("\n\nEnter  1 to edit value in array\n"
-               "Enter  2 to show array\n"
-               "Enter -1 to escape\n\n");
+                   "Enter  2 to show array\n"
+                   "Enter -1 to escape\n\n");
         scanf("%i", &choose);
         if(choose == -1)
             return 1;
@@ -196,20 +187,21 @@ bool InputJob(Triangle_array* triangleArr, bool isEsc)
             break;
     }
     if(choose == 1)
-        isEsc = InputEdit(triangleArr, isEsc);
+        isEsc = InputEdit(ptriangleArr, isEsc);
     else if(choose == 2)
-        PrintHowItLooksLike(*triangleArr);
+        PrintHowItLooksLike(*ptriangleArr);
     return isEsc;
 }
 
-bool InputEdit(Triangle_array* triangleArr, bool isEsc)
+bool InputEdit(Triangle_array* ptriangleArr, bool isEsc)
 {
-    int choose = 0;
     int y = 0, x = 0;
     while(1)
     {
-        InputArr(&x, &y);
-        if(triangleArr -> xytoD(x, y) >= triangleArr -> len)
+        isEsc = InputArr(&x, &y);
+        if(isEsc)
+            return 1;
+        if(ptriangleArr -> xytoD(x, y) >= ptriangleArr -> len)
             printf("Index not in array\n");
         else
             break;
@@ -223,7 +215,7 @@ bool InputEdit(Triangle_array* triangleArr, bool isEsc)
             break;
         printf(RED "Enter one number\n" RESET);
     }
-    triangleArr -> ref[triangleArr -> xytoD(x, y)] = value;
+    ptriangleArr -> ref[ptriangleArr -> xytoD(x, y)] = value;
     return isEsc;
 }
 
